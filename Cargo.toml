@@ -1,0 +1,20 @@
+[package]
+name = "actix_1_lambda"
+version = "0.1.0"
+authors = ["yvt <i@yvt.jp>"]
+edition = "2018"
+
+[dependencies]
+actix-service = "0.4.1"
+actix-server-config = "0.1.2"
+actix-http = "0.2.7"
+actix-rt = "0.2.4"
+futures = "0.1"
+lambda_runtime = "^0.2"
+lambda_http = "^0.1"
+log = "^0.4"
+tokio = "0.1"
+
+[dependencies.actix-web]
+version = "1"
+default-features = false
