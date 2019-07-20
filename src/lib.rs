@@ -7,16 +7,15 @@ use actix_server_config::ServerConfig;
 use actix_service::{IntoNewService, NewService, Service};
 use actix_web::{
     dev::{MessageBody, ResponseBody},
+    http::uri,
     web::{Bytes, BytesMut},
     Error,
 };
 use futures::Stream;
-use lambda_http::{http::header::CONTENT_TYPE, Body as LambdaBody};
+use lambda_http::{http::header::CONTENT_TYPE, Body as LambdaBody, RequestExt};
 use lambda_runtime::error::HandlerError;
-use std::{
-    marker::PhantomData,
-    mem::{replace, swap},
-};
+use percent_encoding::{utf8_percent_encode, QUERY_ENCODE_SET};
+use std::{fmt::Write, marker::PhantomData, mem::replace};
 
 pub struct LambdaHttpServer<F, R, S, B>
 where
@@ -118,13 +117,33 @@ where
 
                 // Set the headers
                 let actix_req_head = actix_req.head_mut();
-                swap(&mut actix_req_head.uri, req.uri_mut());
                 actix_req_head.method = req.method().clone();
                 actix_req_head.version = req.version();
                 actix_req_head.headers = replace(req.headers_mut(), Default::default()).into();
+                actix_req_head.uri = {
+                    let mut builder = uri::Builder::new();
+                    builder.scheme(req.uri().scheme_part().unwrap().clone());
+                    builder.authority(req.uri().authority_part().unwrap().clone());
+
+                    // Reconstruct the encoded query parameters
+                    let query_params = req.query_string_parameters();
+                    let mut path = req.uri().path().to_string();
+                    for (i, (key, value)) in query_params.iter().enumerate() {
+                        write!(
+                            path,
+                            "{}{}={}",
+                            if i == 0 { "?" } else { "&" },
+                            utf8_percent_encode(key, QUERY_ENCODE_SET),
+                            utf8_percent_encode(value, QUERY_ENCODE_SET),
+                        )
+                        .unwrap();
+                    }
+                    builder.path_and_query(path.as_str());
+
+                    builder.build().unwrap()
+                };
 
                 // TODO: Extensions from `lambda_http::RequestExt`. There are five:
-                //  - `query_string_parameters`
                 //  - `path_parameters`
                 //  - `stage_variables`
                 //  - `request_context`
