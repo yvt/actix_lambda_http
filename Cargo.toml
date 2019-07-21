@@ -1,5 +1,5 @@
 [package]
-name = "actix_1_lambda"
+name = "actix_lambda_http"
 version = "0.1.0"
 authors = ["yvt <i@yvt.jp>"]
 edition = "2018"

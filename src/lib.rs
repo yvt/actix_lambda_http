@@ -1,7 +1,7 @@
 //! [Actix]-[AWS Lambda] connector for Actix 1.x
 //!
 //! [Actix]: https://crates.io/crates/actix-web
-//! [AWS Lambda]: https://crates.io/crates/lambda_runtime
+//! [AWS Lambda]: https://crates.io/crates/lambda_http
 //!
 //! This crate provides an AWS Lambda handler function that responds to ALB and
 //! API Gateway proxy events using a provided Actix web application.
