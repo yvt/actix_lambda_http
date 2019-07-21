@@ -14,9 +14,20 @@ use actix_web::{
 use futures::Stream;
 use lambda_http::{http::header::CONTENT_TYPE, Body as LambdaBody, RequestExt};
 use lambda_runtime::error::HandlerError;
-use percent_encoding::{utf8_percent_encode, QUERY_ENCODE_SET};
 use log::{debug, warn};
+use percent_encoding::utf8_percent_encode;
 use std::{fmt::Write, marker::PhantomData, mem::replace};
+
+/// `percent_encoding` implements the percent encoding algorithm in the WHATWG
+/// URL standard which is designed to deal with input that may already be
+/// partially percent-encoded. To do a full percent encoding, we add `%` to the
+/// encode set.
+mod enc_set {
+    use percent_encoding::{define_encode_set, QUERY_ENCODE_SET};
+    define_encode_set! {
+        pub URL_ENCODE = [QUERY_ENCODE_SET] | {'%'}
+    }
+}
 
 pub struct LambdaHttpServer<F, R, S, B>
 where
@@ -134,8 +145,8 @@ where
                             path,
                             "{}{}={}",
                             if i == 0 { "?" } else { "&" },
-                            utf8_percent_encode(key, QUERY_ENCODE_SET),
-                            utf8_percent_encode(value, QUERY_ENCODE_SET),
+                            utf8_percent_encode(key, enc_set::URL_ENCODE),
+                            utf8_percent_encode(value, enc_set::URL_ENCODE),
                         )
                         .unwrap();
                     }
