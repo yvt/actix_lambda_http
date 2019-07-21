@@ -15,6 +15,7 @@ use futures::Stream;
 use lambda_http::{http::header::CONTENT_TYPE, Body as LambdaBody, RequestExt};
 use lambda_runtime::error::HandlerError;
 use percent_encoding::{utf8_percent_encode, QUERY_ENCODE_SET};
+use log::{debug, warn};
 use std::{fmt::Write, marker::PhantomData, mem::replace};
 
 pub struct LambdaHttpServer<F, R, S, B>
@@ -140,8 +141,16 @@ where
                     }
                     builder.path_and_query(path.as_str());
 
+                    debug!(
+                        "Original URI = {:?}, query string parameters = {:?}",
+                        req.uri(),
+                        query_params
+                    );
+
                     builder.build().unwrap()
                 };
+
+                debug!("Reconstructed URI = {:?}", actix_req_head.uri);
 
                 // TODO: Extensions from `lambda_http::RequestExt`. There are five:
                 //  - `path_parameters`
@@ -163,11 +172,16 @@ where
 
                         match resp_bytes {
                             Ok(resp_bytes) => Ok(actix_resp.set_body(resp_bytes)),
-                            Err(e) => Err(e),
+                            Err(e) => {
+                                debug!("Extracing the response failed, treating it as a handler error");
+                                Err(e)
+                            },
                         }
                     })
                     // Construct a response for internal errors (if any)
                     .unwrap_or_else(|actix_err| {
+                        debug!("Got a handler error ({:?}), generating an error response", actix_err);
+
                         let mut actix_resp2 = actix_err.as_response_error().render_response();
 
                         // Convert the body to `Bytes` from `Body`. However, this
@@ -175,7 +189,11 @@ where
                         // ignoring the error.
                         let resp_bytes = read_body(&mut rt, actix_resp2.take_body())
                             .map(BytesMut::freeze)
-                            .unwrap_or_default();
+                            .unwrap_or_else(|e| {
+                                warn!("Failed to extract the body of the error response, ignoring: {:?}", e);
+
+                                Default::default()
+                            });
 
                         actix_resp2.set_body(resp_bytes)
                     });
@@ -195,6 +213,12 @@ where
                     .and_then(|value| value.to_str().ok())
                     .unwrap_or("");
                 let is_binary = binary_media_type_fn(content_type);
+
+                debug!(
+                    "Encoding the response body as {} for content type {:?}",
+                    if is_binary { "binary" } else { "text" },
+                    content_type
+                );
 
                 let resp_body = if is_binary {
                     LambdaBody::Binary(resp_body_vec)
