@@ -1,6 +1,6 @@
 # actix_lambda_http
 
-[<img src="https://docs.rs/actix_1_lambda/badge.svg" alt="docs.rs">](https://docs.rs/actix_1_lambda/)
+[<img src="https://docs.rs/actix_lambda_http/badge.svg" alt="docs.rs">](https://docs.rs/actix_lambda_http/)
 
 [Actix]-[AWS Lambda] connector for Actix 1.x
 
@@ -22,7 +22,7 @@ fn index(req: actix_web::HttpRequest) -> HttpResponse {
 }
 
 fn main() {
-    actix_1_lambda::LambdaHttpServer::new(|| {
+    actix_lambda_http::LambdaHttpServer::new(|| {
         App::new()
             .wrap(actix_web::middleware::Logger::default())
             .route("/", web::to(index))

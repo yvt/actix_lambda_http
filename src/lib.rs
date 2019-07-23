@@ -19,7 +19,7 @@
 //!
 //! # fn main() {
 //! fn main() {
-//!     actix_1_lambda::LambdaHttpServer::new(|| {
+//!     actix_lambda_http::LambdaHttpServer::new(|| {
 //!         App::new()
 //!             .wrap(actix_web::middleware::Logger::default())
 //!             .route("/", web::to(index))

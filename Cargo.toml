@@ -5,7 +5,7 @@ authors = ["yvt <i@yvt.jp>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/yvt/actix_1_lambda"
+repository = "https://github.com/yvt/actix_lambda_http"
 description = """
 Actix-AWS Lambda connector for Actix 1.x
 """
